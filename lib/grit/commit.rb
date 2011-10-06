@@ -196,19 +196,26 @@ module Grit
       Diff.list_from_string(repo, text)
     end
 
-    def show
-      if parents.size > 1
-        diff = @repo.git.native(:diff, {:full_index => true}, "#{parents[0].id}...#{parents[1].id}")
-      else
-        diff = @repo.git.show({:full_index => true, :pretty => 'raw'}, @id)
-      end
-
+    # Return diff objects
+    def show(options = {})
+      options = {:full_index => true}.update(options)
+      options.merge!(:pretty => 'raw') unless parents.size > 1
+      diff = diff_string(options)
       if diff =~ /diff --git a/
         diff = diff.sub(/.+?(diff --git a)/m, '\1')
       else
         diff = ''
       end
       Diff.list_from_string(@repo, diff)
+    end
+
+    # Return diff content
+    def diff_string(options)
+      if parents.size > 1
+        @repo.git.native(:diff, options, "#{parents[0].id}...#{parents[1].id}")
+      else
+        @repo.git.show(options, @id)
+      end
     end
 
     # Shows diffs between the commit's parent and the commit.
@@ -218,14 +225,22 @@ module Grit
     # Returns Grit::Diff[] (baked)
     def diffs(options = {})
       if parents.empty?
-        show
+        show(options)
       else
         self.class.diff(@repo, parents.first.id, @id, [], options)
       end
     end
 
-    def stats
-      stats = @repo.commit_stats(self.sha, 1)[0][-1]
+    # Return diff statistics
+    def stats(options = {})
+      if options[:find_renames]
+        options = options.update(:numstat => true)
+        diff = diff_string(options)
+        CommitStats.list_from_string(@repo, diff)[0][-1]
+      else
+        @repo.commit_stats(self.sha, 1)[0][-1]
+      end
+
     end
 
     # Convert this Commit to a String which is just the SHA1 id
