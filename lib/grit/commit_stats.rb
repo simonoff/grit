@@ -68,9 +68,10 @@ module Grit
 
         files = []
         while lines.first =~ /^([-\d]+)\s+([-\d]+)\s+(.+)/
-          (additions, deletions, filename) = lines.shift.split
+          (additions, deletions, *filename) = lines.shift.split
           additions = additions.to_i
           deletions = deletions.to_i
+          filename = filename.join(' ')
           total = additions + deletions
           files << [filename, additions, deletions, total]
         end
