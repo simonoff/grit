@@ -238,18 +238,13 @@ module Grit
 
     # Return diff statistics
     def stats(options = {})
-      if options[:find_renames]
-        options = options.update(:numstat => true)
-        diff = diff_string(options)
-        if parents.size > 1
-          header = @repo.git.log({:max_count => '1'})
-          diff = header + diff
-        end
-        CommitStats.list_from_string(@repo, diff)[0][-1]
-      else
-        @repo.commit_stats(self.sha, 1)[0][-1]
+      options = options.update(:numstat => true)
+      diff = diff_string(options)
+      if parents.size > 1
+        header = @repo.git.log({:max_count => '1'})
+        diff = header + diff
       end
-
+      CommitStats.list_from_string(@repo, diff)[0][-1]
     end
 
     # Convert this Commit to a String which is just the SHA1 id
