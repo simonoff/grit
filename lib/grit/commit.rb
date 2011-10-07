@@ -201,12 +201,11 @@ module Grit
       options = {:full_index => true}.update(options)
       options.merge!(:pretty => 'raw') unless parents.size > 1
       diff = diff_string(options)
-      if diff =~ /diff --git a/
-        diff = diff.sub(/.+?(diff --git a)/m, '\1')
-      else
-        diff = ''
+      lines = diff.split("\n")
+      until lines.first =~ /diff --git a/ || lines.size == 0
+        lines.shift
       end
-      Diff.list_from_string(@repo, diff)
+      Diff.list_from_string(@repo, lines.join("\n"))
     end
 
     # Return diff content
