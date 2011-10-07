@@ -201,11 +201,17 @@ module Grit
       options = {:full_index => true}.update(options)
       options.merge!(:pretty => 'raw') unless parents.size > 1
       diff = diff_string(options)
-      lines = diff.split("\n")
-      until lines.first =~ /diff --git a/ || lines.size == 0
-        lines.shift
+      if diff =~ /diff --git a/
+        lines = diff.split("\n")
+        until lines.first =~ /diff --git a/ || lines.size == 0
+          lines.shift
+        end
+        diff = lines.join("\n")
+      else
+        diff = ''
       end
-      Diff.list_from_string(@repo, lines.join("\n"))
+
+      Diff.list_from_string(@repo, diff)
     end
 
     # Return diff content
@@ -235,6 +241,10 @@ module Grit
       if options[:find_renames]
         options = options.update(:numstat => true)
         diff = diff_string(options)
+        if parents.size > 1
+          header = @repo.git.log({:max_count => '1'})
+          diff = header + diff
+        end
         CommitStats.list_from_string(@repo, diff)[0][-1]
       else
         @repo.commit_stats(self.sha, 1)[0][-1]
